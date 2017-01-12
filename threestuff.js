@@ -3,7 +3,7 @@ module.exports = function(){
 	function go(){
 		var grammars = {
 	 		j: {
-	 			a: "ba",
+	 			a: "bac",
 				b: "cb",
 				c: "dc",
 				d: "ad",
@@ -76,7 +76,7 @@ module.exports = function(){
 			f: [0, 0, -1],
 		}
 
-	 	var Lstring = makeLString("a", 4, grammars.j);
+	 	var Lstring = makeLString("b", 4, grammars.j);
 	 	Lstring = "c";
 		console.log(Lstring);
 
@@ -93,17 +93,17 @@ module.exports = function(){
 
 		var Lmatrix = [];
 		for(var i = 0; i < Lstring.length; i++){
-			var L = makeLString(Lstring.charAt(i), 8, grammars.j);
+			var L = makeLString(Lstring.charAt(i), 9, grammars.j);
 			var arrayL = [];
 			for(var j = 0; j < L.length; j++){
 				arrayL.push(L.charAt(j));
 			}
 			Lmatrix.push(arrayL);
-			// console.log(L);
 		}
 
 		g = new THREE.Group();
 		var vec = [0, 0, 0];
+		var vecDuplicateTest = {};
 		for(var i = 0; i < Lmatrix.length; i++){
 			vec = [0, 0, 0];
 			for(var j = 0; j < Lmatrix[i].length; j++){
@@ -112,8 +112,14 @@ module.exports = function(){
 				vec[0] += vecChangeStrips[LMatrixChar][0];
 				vec[1] += vecChangeStrips[LMatrixChar][1];
 				vec[2] = i;
-				// addCube(vec[0], vec[1], vec[2])
-				addCube(vec[0], vec[1], vec[2], g);
+
+				//avoid duplicate vertices
+				if(!vecDuplicateTest.hasOwnProperty([vec[0], vec[1], vec[2]])){
+					vecDuplicateTest[[vec[0], vec[1], vec[2]]] = 0;
+					addCube(vec[0], vec[1], vec[2], g);
+				}else{
+					// addCube(vec[0], vec[1], vec[2], g); //alternative option
+				}
 			}
 		}
 
@@ -137,9 +143,11 @@ module.exports = function(){
 		// scene.add(g);
 		// console.log(g)
 
-		var newGroup = new THREE.Group();
+		var dotGroup = new THREE.Group();
 		var dotGeometry = new THREE.Geometry();
-		for(var i = 0; i < 360; i += 45){
+		var degreeIntervals = 45;
+		var systemSliceAmt = 360 / degreeIntervals;
+		for(var i = 0; i < 360; i += degreeIntervals){
 			// g.rotation.x = i * Math.PI / 180;
 			// g.rotation.z = i * Math.PI / 180;
 			g.rotation.y = i * Math.PI / 180;
@@ -150,12 +158,72 @@ module.exports = function(){
 				dotGeometry.vertices.push(new THREE.Vector3(vector.x, vector.y, vector.z));
 				var dotMaterial = new THREE.PointsMaterial( { size: 1, sizeAttenuation: false } );
 				var dot = new THREE.Points( dotGeometry, dotMaterial );
-				newGroup.add(dot);
+				dotGroup.add(dot);
 			}
 		}
-		console.log(newGroup)
-		scene.add(newGroup);
+		scene.add(dotGroup);
+		console.log(dotGroup);
+		console.log(dotGroup.children[0].geometry.vertices.length / 8);
 
+		var systemSliceVertAmt = dotGroup.children[0].geometry.vertices.length / systemSliceAmt;
+		systemSlices = [];
+		var sliceIter = -1;
+		for(i = 0; i < dotGroup.children[0].geometry.vertices.length; i += systemSliceVertAmt){
+			systemSlices.push([]);
+			sliceIter++;
+			for(var j = 0; j < systemSliceVertAmt; j++){
+				systemSlices[sliceIter].push(dotGroup.children[0].geometry.vertices[j]);
+			}
+		}
+		console.log(systemSlices);
+
+		var vertices = dotGroup.children[0].geometry.vertices;
+		var mesh, triangles;
+		var geometry = new THREE.Geometry();
+		var material = new THREE.MeshLambertMaterial({
+	        color: 0x0aeedf
+	    });
+
+		geometry.vertices = vertices;
+		triangles = [];
+		
+		
+		console.log(dotGroup.children[0].geometry.vertices.length - systemSliceVertAmt);
+		for(var i = 0; i < dotGroup.children[0].geometry.vertices.length; i += systemSliceVertAmt) {
+			for(var j = 0; j < systemSliceVertAmt - 1; j++){
+				triangles.push(i + j);
+
+				if(i == dotGroup.children[0].geometry.vertices.length - systemSliceVertAmt){
+					triangles.push(j + 1);
+					triangles.push(j);
+				}else{
+					triangles.push(i + j + systemSliceVertAmt + 1);
+					triangles.push(i + j + systemSliceVertAmt);
+				}
+
+				triangles.push(i + j);
+				triangles.push(i + j + 1);
+
+				if(i == dotGroup.children[0].geometry.vertices.length - systemSliceVertAmt){
+					triangles.push(j + 1);
+				}else{
+					triangles.push(i + j + systemSliceVertAmt + 1);
+				}
+
+			}
+			
+		}
+		console.log(triangles);
+
+		for( var i = 0; i < triangles.length; i += 3){
+		    geometry.faces.push(new THREE.Face3( triangles[i], triangles[i + 1], triangles[i + 2]));
+		}
+
+		mesh = new THREE.Mesh( geometry, material );
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
+		mesh.traverse( function( node ) { if ( node instanceof THREE.Mesh ) { node.castShadow = true; } } );
+		scene.add(mesh);
 		
 	}
 
@@ -189,14 +257,22 @@ module.exports = function(){
 	document.addEventListener( 'mousemove', onMouseMove, false );
 
 	var light;
-	//front light
-	light = new THREE.PointLight(0xffffff, 1.2);
-	light.position.set(100, 300, 600);
+	// //front light
+	// light = new THREE.PointLight(0xffffff, 1.2);
+	// light.position.set(100, 300, 600);
+ // 	scene.add(light);
+ // 	//back light
+ // 	light = new THREE.PointLight(0xffffff, 1.2);
+	// light.position.set(-100, -300, -600);
+ // 	scene.add(light);
+ 	//directional
+ 	// light = new THREE.DirectionalLight( 0xffffff, 1 );
+ 	// light.castShadow = true;
+ 	// scene.add(light);
+ 	light = new THREE.AmbientLight(0x666666);
+ 	light.castShadow = true;
  	scene.add(light);
- 	//back light
- 	light = new THREE.PointLight(0xffffff, 1.2);
-	light.position.set(-100, -300, -600);
- 	scene.add(light);
+
 
  	var g;
 	go();
