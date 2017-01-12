@@ -1,4 +1,152 @@
 module.exports = function(){
+
+	function go(){
+		var grammars = {
+	 		j: {
+	 			a: "bcb",
+				b: "cbc",
+				c: "dcd",
+				d: "ada",
+				// e: "ea"
+	 		},
+	 		six: {
+	 			a: 'ab',
+	 			b: 'ac',
+	 			c: 'cd',
+	 			d: 'de',
+	 			e: 'ef',
+	 			f: 'fa'
+	 		},
+	 		ju: {
+	 			a: 'dad',
+	 			b: 'ba',
+	 			c: 'bcb',
+	 			d: 'dc',
+	 			e: 'ded',
+	 			f: 'fe'
+	 		}
+		}
+
+
+		function randGrammar(){
+			gram = {}
+
+			var choices = ['a', 'b', 'c'];
+
+			var rand1;
+			var rand2;
+			var rand3
+			function randomize(){
+				rand1 = choices[Math.floor(Math.random() * choices.length)];
+				rand2 = choices[Math.floor(Math.random() * choices.length)];
+				rand3 = choices[Math.floor(Math.random() * choices.length)];
+			}
+			randomize();
+			gram.a = rand1 + "" + rand2 + "" + rand3;
+			randomize();
+			gram.b = rand1 + "" + rand2 + "" + rand3;
+			randomize();
+			gram.c = rand1 + "" + rand2 + "" + rand3;
+			
+			console.log(gram);
+			return gram;
+
+		}
+
+		var vecChange = {
+			a: [1, 0, 0],
+			b: [-1, 0, 0],
+			c: [0, 1, 0],
+			d: [0, -1, 0],
+			e: [0, 0, 1],
+			f: [0, 0, -1],
+		}
+		var vecChangeStrips = {
+			a: [1, 0, 0],
+			b: [0, 1, 0],
+			c: [-1, 0, 0],
+			d: [0, -1, 0],
+		}
+		var vecChange3 = {
+			a: [1, 0, 0],
+			b: [0, 1, 0],
+			c: [0, 0, 1],
+			d: [-1, 0, 0],
+			e: [0, -1, 0],
+			f: [0, 0, -1],
+		}
+
+	 	var Lstring = makeLString("a", 2, grammars.j);
+	 	Lstring = "c";
+		console.log(Lstring);
+
+		// var vec = [0, 0, 0];
+		// for(var i = 0; i < Lstring.length; i++){
+		// 	var Lchar = Lstring.charAt(i);
+		// 	vec[0] += vecChange2[Lchar][0];
+		// 	vec[1] += vecChange2[Lchar][1];
+		// 	vec[2] += vecChange2[Lchar][2];
+
+		// 	// console.log(vec);
+		// 	addCube(vec[0], vec[1], vec[2]);
+		// }
+
+		var Lmatrix = [];
+		for(var i = 0; i < Lstring.length; i++){
+			var L = makeLString(Lstring.charAt(i), 5, grammars.j);
+			var arrayL = [];
+			for(var j = 0; j < L.length; j++){
+				arrayL.push(L.charAt(j));
+			}
+			Lmatrix.push(arrayL);
+			// console.log(L);
+		}
+		console.log(Lmatrix);
+
+		g = new THREE.Group();
+		var vec = [0, 0, 0];
+		for(var i = 0; i < Lmatrix.length; i++){
+			vec = [0, 0, 0];
+			for(var j = 0; j < Lmatrix[i].length; j++){
+				// console.log(Lmatrix[i]);
+				var LMatrixChar = Lmatrix[i][j];
+				vec[0] += vecChangeStrips[LMatrixChar][0];
+				vec[1] += vecChangeStrips[LMatrixChar][1];
+				vec[2] = i;
+				// addCube(vec[0], vec[1], vec[2])
+				addCube(vec[0], vec[1], vec[2], g);
+			}
+		}
+
+		scene.add(g);
+		g.rotation.x = 350 * Math.PI / 180;
+		// var vector = new THREE.Vector3();
+		// g.children[20].localToWorld( vector );
+		// console.log(vector);
+
+
+		// for(var i = 0; i < Lstring.length; i += 3){
+		// 	var Lchar1 = Lstring.charAt(i);
+		// 	var Lchar2 = Lstring.charAt(i + 1);
+		// 	var Lchar3 = Lstring.charAt(i + 2);
+		// 	var Lval1 = wordVals[Lchar1];
+		// 	var Lval2 = wordVals[Lchar2];
+		// 	var Lval3 = wordVals[Lchar3];
+		// 	vec[0] += Lval1;
+		// 	vec[1] += Lval2;
+		// 	vec[2] += Lval3;
+		// 	// console.log(vec);
+		// 	addCube(vec[0], vec[1], vec[2]);
+		// }
+	}
+
+
+
+
+
+
+
+
 	//init
 	var THREE= require('three');
 	var scene = new THREE.Scene();
@@ -6,6 +154,7 @@ module.exports = function(){
 	var renderer = new THREE.WebGLRenderer();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );
+	var cameraPointAt = scene.position;
 
 	//mouse input init
 	var movementX;
@@ -23,27 +172,17 @@ module.exports = function(){
 	var light;
 	//front light
 	light = new THREE.PointLight(0xffffff, 1.2);
-	light.position.set(10, 30, 60);
+	light.position.set(100, 300, 600);
  	scene.add(light);
  	//back light
  	light = new THREE.PointLight(0xffffff, 1.2);
-	light.position.set(-10, -30, -60);
+	light.position.set(-100, -300, -600);
  	scene.add(light);
 
-	var geometry = new THREE.BoxGeometry(1, 1, 1);
-	var material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
-	var cube = new THREE.Mesh( geometry, material );
-	cube.rotation.x = Math.PI / 180;
-	cube.rotation.y = Math.PI / 180;
-	cube.position.set(0, 0, 0);
-	scene.add(cube);
-
-	cube = new THREE.Mesh( geometry, material );
-	cube.rotation.x = Math.PI / 180;
-	cube.rotation.y = Math.PI / 180;
-	cube.position.set(1, 0, 0);
-	scene.add(cube);
-
+ 	var g;
+	go();
+	console.log(g.children[5]);
+	
 	var render = function () {
 		requestAnimationFrame(render);
 
@@ -58,7 +197,7 @@ module.exports = function(){
 	render();
 
 	var angle = 0;
-	var camDistance = 10; 
+	var camDistance = 30; 
 	function rotateCamera(){
 		var timer = Date.now() * 0.01;
 		camera.position.x = camDistance * Math.cos( angle );  
@@ -73,11 +212,35 @@ module.exports = function(){
 		camera.position.z = camDistance * Math.sin(angleH * Math.PI / 180);
 		// camera.position.y = camDistance * Math.sin(angleY * Math.PI / 180);
 
-		// console.log(mousePosY)
-		camera.position.y = window.innerHeight / angleY;
+		// console.log(camera.position.y);
 
-		// camera.position.y = angleY * 0.01;
-		camera.lookAt( scene.position );
+		camera.position.y = window.innerHeight / angleY * 10;
+
+		camera.lookAt(cameraPointAt);
 	}
 
+	function addCube(x, y, z, group){
+		var geometry = new THREE.BoxGeometry(1, 1, 1);
+		var material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+		var cube = new THREE.Mesh( geometry, material );
+		cube.rotation.x = Math.PI / 180;
+		cube.rotation.y = Math.PI / 180;
+		cube.position.set(x, y, z);
+		group.add(cube);
+
+		return cube;
+	}
+
+	function makeLString(seed, depth, grammar){
+		var result = "";
+		for(var d = 0; d < depth; d++){
+			for(var i = 0; i < seed.length; i++){
+				result += grammar[seed.charAt(i)] ;
+			}
+			seed = result;
+			if(d != depth - 1)
+				result = "";
+		}
+		return result;
+	}
 }
