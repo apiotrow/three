@@ -3,7 +3,7 @@ module.exports = function(){
 	function go(){
 		var grammars = {
 	 		j: {
-	 			a: "bac",
+	 			a: "ba",
 				b: "cb",
 				c: "dc",
 				d: "ad",
@@ -77,7 +77,7 @@ module.exports = function(){
 		}
 
 	 	var Lstring = makeLString("b", 4, grammars.j);
-	 	Lstring = "c";
+	 	Lstring = "b";
 		console.log(Lstring);
 
 		// var vec = [0, 0, 0];
@@ -145,7 +145,7 @@ module.exports = function(){
 
 		var dotGroup = new THREE.Group();
 		var dotGeometry = new THREE.Geometry();
-		var degreeIntervals = 45;
+		var degreeIntervals = 30;
 		var systemSliceAmt = 360 / degreeIntervals;
 		for(var i = 0; i < 360; i += degreeIntervals){
 			// g.rotation.x = i * Math.PI / 180;
@@ -178,11 +178,15 @@ module.exports = function(){
 		console.log(systemSlices);
 
 		var vertices = dotGroup.children[0].geometry.vertices;
-		var mesh, triangles;
+		// var mesh;
+		var triangles;
 		var geometry = new THREE.Geometry();
-		var material = new THREE.MeshLambertMaterial({
-	        color: 0x0aeedf
-	    });
+		var material = new THREE.MeshPhongMaterial({
+	        color       : 0x33da87,
+	        shininess   : 50, 
+	        specular    : 0x33da87,
+	        shading     : THREE.SmoothShading
+		}); 
 
 		geometry.vertices = vertices;
 		triangles = [];
@@ -209,9 +213,7 @@ module.exports = function(){
 				}else{
 					triangles.push(i + j + systemSliceVertAmt + 1);
 				}
-
 			}
-			
 		}
 		console.log(triangles);
 
@@ -222,9 +224,17 @@ module.exports = function(){
 		mesh = new THREE.Mesh( geometry, material );
 		mesh.castShadow = true;
 		mesh.receiveShadow = true;
-		mesh.traverse( function( node ) { if ( node instanceof THREE.Mesh ) { node.castShadow = true; } } );
-		scene.add(mesh);
-		
+		mesh.traverse( 
+			function( node ) { 
+				if (node instanceof THREE.Mesh) {
+			        node.material = material;
+			        node.castShadow = true;
+			        node.receiveShadow = true;
+			        node.geometry.computeFaceNormals();
+                    node.geometry.computeVertexNormals();
+    			}
+			} 
+		);
 	}
 
 
@@ -237,11 +247,23 @@ module.exports = function(){
 	//init
 	var THREE= require('three');
 	var scene = new THREE.Scene();
-	var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 4000 );
 	var renderer = new THREE.WebGLRenderer();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );
 	var cameraPointAt = scene.position;
+
+	var mesh;
+
+ 	// renderer.shadowMap.enabled = true;
+	renderer.shadowMapSoft = true;
+	renderer.shadowCameraNear = 0.1;
+	renderer.shadowCameraFar = camera.far;
+	renderer.shadowCameraFov = 75;
+	renderer.shadowMapBias = 0.0039;
+	renderer.shadowMapDarkness = 0.5;
+	renderer.shadowMapWidth = 1024;
+	renderer.shadowMapHeight = 1024;
 
 	//mouse input init
 	var movementX;
@@ -257,25 +279,31 @@ module.exports = function(){
 	document.addEventListener( 'mousemove', onMouseMove, false );
 
 	var light;
-	// //front light
+	//front light
 	// light = new THREE.PointLight(0xffffff, 1.2);
 	// light.position.set(100, 300, 600);
+	// light.castShadow = true;
  // 	scene.add(light);
- // 	//back light
+ 	//back light
  // 	light = new THREE.PointLight(0xffffff, 1.2);
 	// light.position.set(-100, -300, -600);
+	// light.castShadow = true;
  // 	scene.add(light);
- 	//directional
- 	// light = new THREE.DirectionalLight( 0xffffff, 1 );
+ 	// directional
+ 	light = new THREE.DirectionalLight(0xffffff, 1);
+ 	light.castShadow = true;
+ 	light.position.x = 100;
+    light.position.y = 150;
+ 	scene.add(light);
+ 	// light = new THREE.AmbientLight(0x666666);
  	// light.castShadow = true;
  	// scene.add(light);
- 	light = new THREE.AmbientLight(0x666666);
- 	light.castShadow = true;
- 	scene.add(light);
+
 
 
  	var g;
 	go();
+	scene.add(mesh);
 	
 	var render = function () {
 		requestAnimationFrame(render);
@@ -291,7 +319,7 @@ module.exports = function(){
 	render();
 
 	var angle = 0;
-	var camDistance = 90; 
+	var camDistance = 30; 
 	function rotateCamera(){
 		var timer = Date.now() * 0.01;
 		camera.position.x = camDistance * Math.cos( angle );  
