@@ -4,9 +4,9 @@ module.exports = function(){
 		var grammars = {
 	 		j: {
 	 			a: "ba",
-				b: "cb",
-				c: "dc",
-				d: "ad",
+				b: "bcb",
+				c: "cd",
+				d: "da",
 				// e: "ea"
 	 		},
 	 		six: {
@@ -31,22 +31,34 @@ module.exports = function(){
 		function randGrammar(){
 			gram = {}
 
-			var choices = ['a', 'b', 'c'];
+			var choices = ['a', 'b', 'c', 'd'/*, 'e', 'f'*/];
 
 			var rand1;
 			var rand2;
-			var rand3
+			// var rand3;
+			// var rand4;
+			// var rand5;
+			// var rand6;
 			function randomize(){
 				rand1 = choices[Math.floor(Math.random() * choices.length)];
 				rand2 = choices[Math.floor(Math.random() * choices.length)];
-				rand3 = choices[Math.floor(Math.random() * choices.length)];
+				// rand3 = choices[Math.floor(Math.random() * choices.length)];
+				// rand4 = choices[Math.floor(Math.random() * choices.length)];
+				// rand5 = choices[Math.floor(Math.random() * choices.length)];
+				// rand6 = choices[Math.floor(Math.random() * choices.length)];
 			}
 			randomize();
-			gram.a = rand1 + "" + rand2 + "" + rand3;
+			gram.a = rand1 + "" + rand2;
 			randomize();
-			gram.b = rand1 + "" + rand2 + "" + rand3;
+			gram.b = rand1 + "" + rand2;
 			randomize();
-			gram.c = rand1 + "" + rand2 + "" + rand3;
+			gram.c = rand1 + "" + rand2;
+			randomize();
+			gram.d = rand1 + "" + rand2;
+			// randomize();
+			// gram.e = rand1 + "" + rand2 + "" + rand3 + "" + rand4 + "" + rand5 + "" + rand6;
+			// randomize();
+			// gram.f = rand1 + "" + rand2 + "" + rand3 + "" + rand4 + "" + rand5 + "" + rand6;
 			
 			console.log(gram);
 			return gram;
@@ -77,7 +89,7 @@ module.exports = function(){
 		}
 
 	 	var Lstring = makeLString("b", 4, grammars.j);
-	 	Lstring = "b";
+	 	Lstring = "a";
 		console.log(Lstring);
 
 		// var vec = [0, 0, 0];
@@ -93,7 +105,7 @@ module.exports = function(){
 
 		var Lmatrix = [];
 		for(var i = 0; i < Lstring.length; i++){
-			var L = makeLString(Lstring.charAt(i), 9, grammars.j);
+			var L = makeLString(Lstring.charAt(i), 9,  grammars.j);
 			var arrayL = [];
 			for(var j = 0; j < L.length; j++){
 				arrayL.push(L.charAt(j));
@@ -185,8 +197,16 @@ module.exports = function(){
 	        color       : 0x33da87,
 	        shininess   : 50, 
 	        specular    : 0x33da87,
-	        shading     : THREE.SmoothShading
+	        shading     : THREE.SmoothShading,
+	        side        : THREE.DoubleSide 
 		}); 
+		// var material = new THREE.MeshLambertMaterial({
+		// 	color       : 0x33da87,
+		// 	shading: THREE.FlatShading,
+		// 	side        : THREE.DoubleSide 
+		// });
+		material.polygonOffset = true;
+		material.polygonOffsetFactor = -0.1;
 
 		geometry.vertices = vertices;
 		triangles = [];
@@ -195,24 +215,50 @@ module.exports = function(){
 		console.log(dotGroup.children[0].geometry.vertices.length - systemSliceVertAmt);
 		for(var i = 0; i < dotGroup.children[0].geometry.vertices.length; i += systemSliceVertAmt) {
 			for(var j = 0; j < systemSliceVertAmt - 1; j++){
-				triangles.push(i + j);
+				var A;
+				var B;
+				var C;
+
+				//quad part 1
+				A = i + j;
 
 				if(i == dotGroup.children[0].geometry.vertices.length - systemSliceVertAmt){
-					triangles.push(j + 1);
-					triangles.push(j);
+					B = j + 1;
+					C = j;
 				}else{
-					triangles.push(i + j + systemSliceVertAmt + 1);
-					triangles.push(i + j + systemSliceVertAmt);
+					B = i + j + systemSliceVertAmt + 1;
+					C = i + j + systemSliceVertAmt;
 				}
 
-				triangles.push(i + j);
-				triangles.push(i + j + 1);
+				//counter clockwise
+				triangles.push(A);
+				triangles.push(B);
+				triangles.push(C);
+
+				//clockwise
+				// triangles.push(C);
+				// triangles.push(B);
+				// triangles.push(A);
+
+				//quad part 2
+				A = i + j;
+				B = i + j + 1;
 
 				if(i == dotGroup.children[0].geometry.vertices.length - systemSliceVertAmt){
-					triangles.push(j + 1);
+					C = j + 1;
 				}else{
-					triangles.push(i + j + systemSliceVertAmt + 1);
+					C = i + j + systemSliceVertAmt + 1;
 				}
+
+				//counter clockwise
+				triangles.push(A);
+				triangles.push(B);
+				triangles.push(C);
+
+				//clockwise
+				// triangles.push(C);
+				// triangles.push(B);
+				// triangles.push(A);
 			}
 		}
 		console.log(triangles);
@@ -220,6 +266,7 @@ module.exports = function(){
 		for( var i = 0; i < triangles.length; i += 3){
 		    geometry.faces.push(new THREE.Face3( triangles[i], triangles[i + 1], triangles[i + 2]));
 		}
+		geometry.dynamic = true;
 
 		mesh = new THREE.Mesh( geometry, material );
 		mesh.castShadow = true;
@@ -235,7 +282,12 @@ module.exports = function(){
     			}
 			} 
 		);
+
+		//get rid of the white vertex dots
+		scene.remove(dotGroup)
 	}
+
+
 
 
 
@@ -247,8 +299,8 @@ module.exports = function(){
 	//init
 	var THREE= require('three');
 	var scene = new THREE.Scene();
-	var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 4000 );
-	var renderer = new THREE.WebGLRenderer();
+	var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 4000);
+	var renderer = new THREE.WebGLRenderer({ antialias: true });
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );
 	var cameraPointAt = scene.position;
@@ -257,13 +309,14 @@ module.exports = function(){
 
  	// renderer.shadowMap.enabled = true;
 	renderer.shadowMapSoft = true;
-	renderer.shadowCameraNear = 0.1;
+	renderer.shadowCameraNear = 1;
 	renderer.shadowCameraFar = camera.far;
 	renderer.shadowCameraFov = 75;
 	renderer.shadowMapBias = 0.0039;
 	renderer.shadowMapDarkness = 0.5;
 	renderer.shadowMapWidth = 1024;
 	renderer.shadowMapHeight = 1024;
+	renderer.setPixelRatio(2);
 
 	//mouse input init
 	var movementX;
@@ -284,7 +337,7 @@ module.exports = function(){
 	// light.position.set(100, 300, 600);
 	// light.castShadow = true;
  // 	scene.add(light);
- 	//back light
+ 	// back light
  // 	light = new THREE.PointLight(0xffffff, 1.2);
 	// light.position.set(-100, -300, -600);
 	// light.castShadow = true;
@@ -304,11 +357,14 @@ module.exports = function(){
  	var g;
 	go();
 	scene.add(mesh);
+
+	
 	
 	var render = function () {
 		requestAnimationFrame(render);
 
 		// rotateCamera();
+		mesh.rotation.z += 0.01;
 		
 		if(mousePosX === undefined || mousePosY === undefined)
 			setCameraAngle(135, 100);
@@ -332,7 +388,7 @@ module.exports = function(){
 		angle += 90;
 		camera.position.x = camDistance * Math.cos(angleH * Math.PI / 180);  
 		camera.position.z = camDistance * Math.sin(angleH * Math.PI / 180);
-		// camera.position.y = camDistance * Math.sin(angleY * Math.PI / 180);
+		// camera.position.y = camDistance * Math.tan(angleY * Math.PI / 180);
 
 		// console.log(camera.position.y);
 
